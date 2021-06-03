@@ -6,13 +6,6 @@ Created on Wed Jun  2 23:20:31 2021
 @author: maggie
 """
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Sun May 30 12:49:35 2021
-
-@author: maggie
-"""
 
 import torch
 import torch.optim as optim
@@ -101,7 +94,7 @@ class Generator(nn.Module):
         return nn.Conv2d(ch_in, ch_out, kernel, stride, padding)
         
     def __init__(self, ch_in, repeat_num, hidden_num=128):
-        super(UAE, self).__init__()
+        super(Generator, self).__init__()
         self.hidden_num = hidden_num
         self.repeat_num = repeat_num
         
