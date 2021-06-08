@@ -27,10 +27,10 @@ class InpaintDataset(Dataset):
         self.year = opt.year
         self.w = opt.w
         self.h = opt.h
-        self.transforms = transforms.Compose([\
-                            transforms.Resize((self.h, self.w)),\
-                            transforms.ToTensor(),\
-                            #ransforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))
+        self.transforms = transforms.Compose([
+                            transforms.Resize((self.h, self.w)),
+                            transforms.ToTensor(),
+                            transforms.Normalize(mean = (0.485,0.456,0.406),std = (0.229,0.224,0.225))
                             ])
         names = []
         with open(os.path.join(self.txtpath, self.mode+self.year+".txt"), "r") as f:
@@ -44,9 +44,11 @@ class InpaintDataset(Dataset):
     
     def __getitem__(self, index):
         name = self.names[index]
+        #print(name)
         img = Image.open(os.path.join(self.imgpath, self.mode+self.year, name))
-        imgnp = np.asarray(img)
-        imgnp = np.resize(imgnp,(self.h, self.w, 3))
+        img = img.convert('RGB')
+        #imgnp = np.asarray(img)
+        #imgnp = self.transforms(imgnp)#np.resize(imgnp,(self.h, self.w, 3))
         img = self.transforms(img)
         cropout_size = random.randint(20, int(min(self.w, self.h)/2))
         #start point of cropout part(r, c)
@@ -61,6 +63,7 @@ class InpaintDataset(Dataset):
         
         
         result = {
+            "image_name": name,
             "image": img,
             "crop_mask": crop_mask,
             "point_r": sr, 
@@ -75,14 +78,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--imgpath", default = ".")
     parser.add_argument("--txtpath", default = ".")
-    parser.add_argument("--year", default = "2017")
+    parser.add_argument("--year", default = "")
     parser.add_argument("--w", default = 224)
     parser.add_argument("--h", default = 224)
-    parser.add_argument("--batch_size", default = 4)
+    parser.add_argument("--batch_size", default = 1)
     opt = parser.parse_args()
     
-    dataset = InpaintDataset(opt, mode = 'val')
-    dataloader = DataLoader(dataset, batch_size = opt.batch_size, shuffle = False, pin_memory = True)
+    dataset = InpaintDataset(opt, mode = 'train')
+    dataloader = DataLoader(dataset, batch_size = opt.batch_size, shuffle = False, pin_memory = True)#, num_workers = 8)
+
     print('Size of the dataset: %d, dataloader: %d' % (len(dataset), len(dataloader)))
     item = dataset.__getitem__(0)
     
@@ -95,11 +99,13 @@ if __name__ == "__main__":
     
     img = batch['image'].cuda()
     mask = batch['crop_mask'].cuda()
-    point_r = batch['point_r']
-    point_c = batch['point_c']
-    print(point_r, point_c)
+    sr = batch['point_r']
+    sc = batch['point_c']
+    crop_size = batch['crop_size']
+    print(crop_size)
     print(img.shape)
     x = img*mask
+    x2 = x[:,:, sr:sr+crop_size-1, sc:sc+crop_size-1]
     print(img[0][1][50][40])
     y = img*(1-mask)
     
@@ -107,10 +113,18 @@ if __name__ == "__main__":
     
     
     utils.imgsave(mask, './mask.png')
-    utils.imgsave(x, './x.png')
+    utils.imgsave(x2, './x.png')
     utils.imgsave(y, './y.png')
     utils.imgsave(add, './xy.png')
-
+    
+    
+    
+    counter = 0
+    for step, batch in enumerate(dataloader):
+        counter+=opt.batch_size
+        img = batch['image'].cuda()
+        #print(img.shape)
+        print('counter: ',counter)
 
 
 
