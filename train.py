@@ -59,8 +59,8 @@ val_dataset = InpaintDataset(opt, mode = 'val')
 val_dataloader = DataLoader(val_dataset, batch_size = opt.batch_size, shuffle = True, pin_memory = True)#, num_workers = 8)
 print('Size of the validation dataset: %d, dataloader: %d' % (len(val_dataset), len(val_dataloader)))
 
-generator = ResNet()
-#generator = Generator()
+#generator = ResNet()
+generator = Generator()
 #generator = UAE(ch_in=3, repeat_num = None, hidden_num=64)
 discriminator = Discriminator()
 
